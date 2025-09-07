@@ -30,6 +30,7 @@ enum State { NORMAL, DASHING, ATTACKING, HURT, DEAD }
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var health: Health = $Health
+@onready var attack_sprite: Sprite2D = $Hitbox/AttackSprite
 
 var state: State = State.NORMAL
 var facing_right := true
@@ -153,14 +154,18 @@ func _input(event: InputEvent) -> void:
 
 func _begin_attack_window() -> void:
 	hitbox.monitoring = true
+	hitbox.monitorable = true
 	hitbox_shape.disabled = false
 	hitbox.position.x = 16.0 * (1 if facing_right else -1)
 	hitbox.position.y = 0.0
 	hitbox.owner_facing_right = facing_right
+	attack_sprite.visible = true
 
 func _end_attack_window() -> void:
 	hitbox.monitoring = false
+	hitbox.monitorable = false
 	hitbox_shape.disabled = true
+	attack_sprite.visible = false
 
 func apply_damage(amount: int, kb: Vector2) -> void:
 	if state == State.DEAD:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://player"]
+[gd_scene load_steps=12 format=3 uid="uid://player"]
 
 [ext_resource type="Script" uid="uid://ps6q2mp0g44q" path="res://scripts/player.gd" id="1"]
 [ext_resource type="Script" uid="uid://da4c5qp6ejrhc" path="res://scripts/hitbox.gd" id="2"]
@@ -21,6 +21,14 @@ size = Vector2(20, 12)
 
 [sub_resource type="RectangleShape2D" id="5"]
 size = Vector2(16, 20)
+
+[sub_resource type="Gradient" id="6"]
+colors = PackedColorArray(1, 0, 0, 1, 0.8, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="7"]
+gradient = SubResource("6")
+width = 20
+height = 20
 
 [node name="Player" type="CharacterBody2D"]
 script = ExtResource("1")
@@ -45,6 +53,10 @@ script = ExtResource("2")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
 position = Vector2(16, 0)
 shape = SubResource("4")
+
+[node name="AttackSprite" type="Sprite2D" parent="Hitbox"]
+visible = false
+texture = SubResource("7")
 
 [node name="Hurtbox" type="Area2D" parent="."]
 script = ExtResource("3")
