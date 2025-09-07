@@ -41,10 +41,11 @@ var _dash_cd: float = 0.0
 var _attack_t: float = 0.0
 
 func _ready() -> void:
-	health.connect("died", Callable(self, "_on_died"))
-	hurtbox.connect("hurt", Callable(self, "_on_hurt"))
-	hitbox.monitoring = false
-	hitbox_shape.disabled = true
+        add_to_group("player")
+        health.connect("died", Callable(self, "_on_died"))
+        hurtbox.connect("hurt", Callable(self, "_on_hurt"))
+        hitbox.monitoring = false
+        hitbox_shape.disabled = true
 
 func _physics_process(delta: float) -> void:
 	_coyote = max(0.0, _coyote - delta)

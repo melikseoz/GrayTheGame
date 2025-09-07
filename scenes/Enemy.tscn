@@ -1,7 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://enemy"]
+[gd_scene load_steps=10 format=3 uid="uid://enemy"]
 
 [ext_resource type="Script" uid="uid://do3js3av83rl" path="res://scripts/enemy_patrol.gd" id="1"]
 [ext_resource type="Script" uid="uid://qklqddbokb75" path="res://scripts/health.gd" id="2"]
+[ext_resource type="Script" uid="uid://da4c5qp6ejrhc" path="res://scripts/hitbox.gd" id="3"]
+[ext_resource type="Script" uid="uid://dgi6avek8ewgc" path="res://scripts/hurtbox.gd" id="4"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(20, 16)
@@ -13,6 +15,12 @@ colors = PackedColorArray(1, 0.4, 0.4, 1, 0.7, 0.2, 0.2, 1)
 gradient = SubResource("2")
 width = 20
 height = 16
+
+[sub_resource type="RectangleShape2D" id="4"]
+size = Vector2(20, 16)
+
+[sub_resource type="RectangleShape2D" id="5"]
+size = Vector2(20, 16)
 
 [node name="Enemy" type="CharacterBody2D"]
 script = ExtResource("1")
@@ -26,6 +34,18 @@ texture = SubResource("3")
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("2")
+
+[node name="Hitbox" type="Area2D" parent="."]
+script = ExtResource("3")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+shape = SubResource("4")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+script = ExtResource("4")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+shape = SubResource("5")
 
 [node name="P1" type="Marker2D" parent="."]
 position = Vector2(-80, 0)
