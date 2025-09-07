@@ -1,0 +1,67 @@
+[gd_scene load_steps=9 format=3 uid="uid://world"]
+
+[ext_resource type="PackedScene" uid="uid://player" path="res://scenes/Player.tscn" id="1"]
+[ext_resource type="PackedScene" uid="uid://enemy" path="res://scenes/Enemy.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://checkpoint" path="res://scenes/Checkpoint.tscn" id="3"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_7g83o"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_7g83o"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7g83o"]
+size = Vector2(698, 48)
+
+[sub_resource type="RectangleShape2D" id="2"]
+size = Vector2(120, 20)
+
+[sub_resource type="RectangleShape2D" id="3"]
+size = Vector2(20, 94)
+
+[node name="World" type="Node2D"]
+top_level = true
+material = SubResource("CanvasItemMaterial_7g83o")
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="Floor" type="StaticBody2D" parent="Platforms"]
+physics_material_override = SubResource("PhysicsMaterial_7g83o")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Floor"]
+position = Vector2(-36, 154)
+shape = SubResource("RectangleShape2D_7g83o")
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/Floor"]
+offset_left = -384.0
+offset_top = 131.0
+offset_right = 309.0
+offset_bottom = 176.0
+color = Color(0.766592, 0.481587, 0.16984, 1)
+
+[node name="Ledge" type="StaticBody2D" parent="Platforms"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Ledge"]
+position = Vector2(220, 60)
+shape = SubResource("2")
+
+[node name="Wall" type="StaticBody2D" parent="Platforms"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Wall"]
+position = Vector2(-200, 93)
+shape = SubResource("3")
+debug_color = Color(0, 0.464346, 0.714091, 0.42)
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/Wall"]
+offset_left = -209.0
+offset_top = 46.0
+offset_right = -190.0
+offset_bottom = 139.0
+color = Color(0.623255, 0.431304, 0.149508, 1)
+
+[node name="Player" parent="." instance=ExtResource("1")]
+position = Vector2(-250, 0)
+
+[node name="Enemy" parent="." instance=ExtResource("2")]
+position = Vector2(80, 0)
+
+[node name="Checkpoint" parent="." instance=ExtResource("3")]
+position = Vector2(220, 20)
