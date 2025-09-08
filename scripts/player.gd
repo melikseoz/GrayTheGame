@@ -1,8 +1,10 @@
 
 extends CharacterBody2D
 
+# Simple state machine for handling the player's many movement/combat modes.
 enum State { NORMAL, DASHING, ATTACKING, HURT, DEAD }
 
+# --- Tunable stats ---
 @export var GRAVITY: float = 1800.0
 @export var MAX_SPEED: float = 260.0
 @export var ACCEL_GROUND: float = 3200.0
@@ -24,12 +26,21 @@ enum State { NORMAL, DASHING, ATTACKING, HURT, DEAD }
 
 @export var ATTACK_TIME: float = 0.18
 
+# Combat stats
+@export var MAX_HEALTH: int = 3
+@export var ATTACK_DAMAGE: int = 1
+
 @onready var sprite: Node2D = $Sprite
 @onready var camera: Camera2D = $Camera2D
+# Area used to deal damage when attacking.
 @onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
+# Area used to receive damage from other actors.
 @onready var hurtbox: Area2D = $Hurtbox
+# Handles current and maximum health.
 @onready var health: Health = $Health
+# Quick placeholder sprite shown during attacks.
+@onready var attack_sprite: Sprite2D = $Hitbox/AttackSprite
 
 var state: State = State.NORMAL
 var facing_right := true
@@ -42,8 +53,13 @@ var _attack_t: float = 0.0
 
 func _ready() -> void:
         add_to_group("player")
+        # Wire up combat related signals and initialise stats.
         health.connect("died", Callable(self, "_on_died"))
         hurtbox.connect("hurt", Callable(self, "_on_hurt"))
+        health.max_health = MAX_HEALTH
+        health.current = MAX_HEALTH
+        health.emit_signal("health_changed", health.current, health.max_health)
+        hitbox.damage = ATTACK_DAMAGE
         hitbox.monitoring = false
         hitbox_shape.disabled = true
 
@@ -57,7 +73,8 @@ func _physics_process(delta: float) -> void:
 	if is_on_floor():
 		_coyote = COYOTE_TIME
 
-	match state:
+        # Dispatch to the active state handler.
+        match state:
 		State.NORMAL:
 			_state_normal(delta)
 		State.DASHING:
@@ -72,8 +89,9 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _state_normal(delta: float) -> void:
-	var input_dir := Input.get_axis("move_left", "move_right")
-	var accel := ACCEL_GROUND if is_on_floor() else ACCEL_AIR
+        # Standard movement: walking, jumping and initiating dash/attack.
+        var input_dir := Input.get_axis("move_left", "move_right")
+        var accel := ACCEL_GROUND if is_on_floor() else ACCEL_AIR
 
 	if input_dir != 0.0:
 		velocity.x = move_toward(velocity.x, input_dir * MAX_SPEED, accel * delta)
@@ -106,8 +124,8 @@ func _state_normal(delta: float) -> void:
 		_jump_buf = 0.0
 		_coyote = 0.0
 
-	if Input.is_action_just_pressed("dash") and _dash_cd <= 0.0:
-		state = State.DASHING
+        if Input.is_action_just_pressed("dash") and _dash_cd <= 0.0:
+                state = State.DASHING
 		_dash_t = DASH_TIME
 		_dash_cd = DASH_COOLDOWN
 		var dir := Input.get_axis("move_left", "move_right")
@@ -116,62 +134,76 @@ func _state_normal(delta: float) -> void:
 		velocity = Vector2(dir * DASH_SPEED, 0.0)
 		return
 
-	if Input.is_action_just_pressed("attack"):
-		state = State.ATTACKING
-		_attack_t = ATTACK_TIME
-		_begin_attack_window()
+        if Input.is_action_just_pressed("attack"):
+                state = State.ATTACKING
+                _attack_t = ATTACK_TIME
+                _begin_attack_window()
 
 func _state_dashing(delta: float) -> void:
-	velocity.y = 0.0
-	if _dash_t <= 0.0:
-		state = State.NORMAL
-	if Input.is_action_just_pressed("jump"):
-		_jump_buf = JUMP_BUFFER
-	if Input.is_action_just_pressed("attack"):
-		state = State.ATTACKING
-		_attack_t = ATTACK_TIME
-		_begin_attack_window()
+        velocity.y = 0.0
+        # Dash ends when timer runs out.
+        if _dash_t <= 0.0:
+                state = State.NORMAL
+        if Input.is_action_just_pressed("jump"):
+                _jump_buf = JUMP_BUFFER
+        if Input.is_action_just_pressed("attack"):
+                state = State.ATTACKING
+                _attack_t = ATTACK_TIME
+                _begin_attack_window()
 
 func _state_attacking(delta: float) -> void:
-	if not is_on_floor():
-		velocity.y += GRAVITY * delta
-	velocity.x = move_toward(velocity.x, (1 if facing_right else -1) * MAX_SPEED * 0.4, ACCEL_AIR * 0.5 * delta)
-	if _attack_t <= 0.0:
-		_end_attack_window()
-		state = State.NORMAL
-	if Input.is_action_just_pressed("jump"):
-		_jump_buf = JUMP_BUFFER
+        # Slight horizontal drift towards facing direction while in air
+        # and fall normally under gravity.
+        if not is_on_floor():
+                velocity.y += GRAVITY * delta
+        velocity.x = move_toward(velocity.x, (1 if facing_right else -1) * MAX_SPEED * 0.4, ACCEL_AIR * 0.5 * delta)
+        # Attack window ends once timer is done.
+        if _attack_t <= 0.0:
+                _end_attack_window()
+                state = State.NORMAL
+        if Input.is_action_just_pressed("jump"):
+                _jump_buf = JUMP_BUFFER
 
 func _state_hurt(delta: float) -> void:
-	velocity.y += GRAVITY * delta
-	if is_on_floor():
-		state = State.NORMAL
+        # Knocked back; regain control once we land.
+        velocity.y += GRAVITY * delta
+        if is_on_floor():
+                state = State.NORMAL
 
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("jump"):
-		_jump_buf = JUMP_BUFFER
+        if event.is_action_pressed("jump"):
+                _jump_buf = JUMP_BUFFER
 
 func _begin_attack_window() -> void:
-	hitbox.monitoring = true
-	hitbox_shape.disabled = false
-	hitbox.position.x = 16.0 * (1 if facing_right else -1)
-	hitbox.position.y = 0.0
-	hitbox.owner_facing_right = facing_right
+        # Enable the hitbox positioned in front of the player.
+        hitbox.monitoring = true
+        hitbox.monitorable = true
+        hitbox_shape.disabled = false
+        hitbox.position.x = 16.0 * (1 if facing_right else -1)
+        hitbox.position.y = 0.0
+        hitbox.owner_facing_right = facing_right
+        attack_sprite.visible = true
 
 func _end_attack_window() -> void:
-	hitbox.monitoring = false
-	hitbox_shape.disabled = true
+        # Disable hitbox once attack is over.
+        hitbox.monitoring = false
+        hitbox.monitorable = false
+        hitbox_shape.disabled = true
+        attack_sprite.visible = false
 
 func apply_damage(amount: int, kb: Vector2) -> void:
-	if state == State.DEAD:
-		return
-	health.damage(amount)
-	velocity = kb
-	state = State.HURT
+        if state == State.DEAD:
+                return
+        # Apply damage and knockback, entering the hurt state.
+        health.damage(amount)
+        velocity = kb
+        state = State.HURT
 
 func _on_hurt(damage: int, from_vec: Vector2) -> void:
-	apply_damage(damage, from_vec)
+        # Callback from hurtbox when another hitbox deals damage.
+        apply_damage(damage, from_vec)
 
 func _on_died() -> void:
-	state = State.DEAD
-	get_tree().reload_current_scene()
+        # Reset the scene on death for now.
+        state = State.DEAD
+        get_tree().reload_current_scene()
