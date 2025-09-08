@@ -5,6 +5,7 @@ extends CharacterBody2D
 @export var contact_damage: int = 1
 # Maximum health this enemy starts with.
 @export var max_health: int = 2
+
 var _gravity: float = 1800.0
 
 # Cached child nodes.

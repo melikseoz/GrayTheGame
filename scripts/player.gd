@@ -191,6 +191,7 @@ func _end_attack_window() -> void:
         hitbox_shape.disabled = true
         attack_sprite.visible = false
 
+
 func apply_damage(amount: int, kb: Vector2) -> void:
         if state == State.DEAD:
                 return
